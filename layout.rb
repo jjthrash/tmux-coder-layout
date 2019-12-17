@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 #/* Calculate layout checksum. */
 #static u_short
 #layout_checksum(const char *layout)
@@ -13,7 +15,6 @@
 #}
 
 require 'raabro'
-require 'pry'
 
 class LayoutString < Struct.new(:checksum, :layout)
   def visit(visitor)
@@ -173,13 +174,13 @@ def get_pane_ids(layout)
 end
 
 def get_sums(total, count)
-  ([1]*total).group_by.with_index {|_, i| i % count}.values.map(&:sum)
+  ([1]*total).group_by.with_index {|_, i| i % count}.values.map {|a| a.inject(0, &:+)}
 end
 
 def distribute_horizontally(y, width, height, pane_ids)
   widths = get_sums(width - (pane_ids.count-1), pane_ids.count)
   pane_ids.map.with_index {|pane_id, i|
-    x = widths[0,i].sum + i
+    x = widths[0,i].inject(0, &:+) + i
     dim = "#{widths[i]}x#{height}"
     Layout.new(dim, x, y, PaneId.new(pane_id))
   }
@@ -188,7 +189,7 @@ end
 def distribute_vertically(x, width, height, pane_ids)
   heights = get_sums(height - (pane_ids.count-1), pane_ids.count)
   pane_ids.map.with_index {|pane_id, i|
-    y = heights[0,i].sum + i
+    y = heights[0,i].inject(0, &:+) + i
     dim = "#{width}x#{heights[i]}"
     Layout.new(dim, x, y, PaneId.new(pane_id))
   }

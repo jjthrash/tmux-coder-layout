@@ -95,6 +95,7 @@ end
 
 require 'raabro'
 
+# A Raabro PEG for parsing tmux layout strings
 module TmuxLayout
   include Raabro
 
@@ -175,6 +176,15 @@ module TmuxLayout
   end
 end
 
+#################
+# layout building
+#################
+
+# Get the pane ids for the current panes, in order.
+#
+# layout - A Layout to extract pane ids from
+#
+# Returns: [pane id integers]
 def get_pane_ids(layout)
   pane_ids = []
   visitor = ->(node) {
@@ -186,6 +196,12 @@ def get_pane_ids(layout)
   pane_ids
 end
 
+# Divvy the total amount into count groups
+#
+# total - The total amount to divvy up
+# count - The number of sums to get
+#
+# Returns an Array of `count` integers, totaling `total`
 def get_sums(total, count)
   ([1]*total).group_by.with_index {|_, i| i % count}.values.map {|a| a.inject(0, &:+)}
 end
@@ -208,6 +224,7 @@ def distribute_vertically(x, width, height, pane_ids)
   }
 end
 
+# Build the layout for a horizontal row of editors.
 def build_editor_layout(width, height, pane_ids)
   if pane_ids.count == 1
     build_single_editor_layout(width, height, pane_ids.first)
@@ -216,10 +233,12 @@ def build_editor_layout(width, height, pane_ids)
   end
 end
 
+# Build a layout containing a single pane.
 def build_single_editor_layout(width, height, pane_id)
   Layout.new("#{width}x#{height}", 0, 0, PaneId.new(pane_id))
 end
 
+# Build a horizontal layout containing multiple panes
 def build_multiple_editor_layout(width, height, pane_ids)
   editor_height = height / 2
   top_editor_pane_ids = pane_ids[0, pane_ids.count/2]
@@ -233,16 +252,24 @@ def build_multiple_editor_layout(width, height, pane_ids)
   Layout.new("#{width}x#{height}", 0, 0, VerticalNesting.new([ top_layout, bottom_layout ]))
 end
 
+# Build a layout for a vertical column of consoles
 def build_console_layout(x, width, height, pane_ids)
   console_layouts = distribute_vertically(x, width, height, pane_ids)
   Layout.new("#{width}x#{height}", x, 0,
     VerticalNesting.new(console_layouts))
 end
 
+# Determine how wide the console column should be
 def determine_console_width(total_width)
   [[total_width / 4, 120].min, 80].max
 end
 
+# Build the coder layout for a certain number of editors
+#
+# editor_count - The number of editors on the left
+#
+# Returns a layout with `editor_count` editors on the left and the remaining
+# panes on the right.
 def coder_layout(editor_count)
   current_layout = TmuxLayout.parse(tmux_current_layout)
   layout = current_layout.layout

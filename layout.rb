@@ -195,6 +195,18 @@ def distribute_vertically(x, width, height, pane_ids)
 end
 
 def build_editor_layout(width, height, pane_ids)
+  if pane_ids.count == 1
+    build_single_editor_layout(width, height, pane_ids.first)
+  else
+    build_multiple_editor_layout(width, height, pane_ids)
+  end
+end
+
+def build_single_editor_layout(width, height, pane_id)
+  Layout.new("#{width}x#{height}", 0, 0, PaneId.new(pane_id))
+end
+
+def build_multiple_editor_layout(width, height, pane_ids)
   editor_height = height / 2
   top_editor_pane_ids = pane_ids[0, pane_ids.count/2]
   bottom_editor_pane_ids = pane_ids[pane_ids.count/2..-1]
@@ -217,6 +229,10 @@ def coder_layout(editor_count)
   current_layout = TmuxLayout.parse(get_current_layout_string)
   layout = current_layout.layout
   pane_ids = get_pane_ids(layout)
+
+  if pane_ids.count == 1
+    return current_layout.to_s
+  end
 
   total_dims = layout.dims
   total_width, total_height = total_dims.split('x').map(&:to_i)

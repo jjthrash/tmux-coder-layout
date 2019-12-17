@@ -1,5 +1,28 @@
 #!/usr/bin/env ruby
 
+#########################
+# tmux get current layout
+#########################
+
+def window_layout(window)
+  window =~ /\[layout (\S+)\]/
+  $1
+end
+
+def current_window(windows)
+  windows.find { |window|
+    window.split(/\s+/)[1].end_with?('*')
+  }
+end
+
+def windows
+  `tmux list-windows`.lines.map(&:chomp)
+end
+
+def tmux_current_layout
+  window = current_window(windows)
+  window_layout(window)
+end
 
 #####################
 # tmux layout classes
@@ -152,10 +175,6 @@ module TmuxLayout
   end
 end
 
-def get_current_layout_string
-  `tmux-current-layout`
-end
-
 def get_pane_ids(layout)
   pane_ids = []
   visitor = ->(node) {
@@ -225,7 +244,7 @@ def determine_console_width(total_width)
 end
 
 def coder_layout(editor_count)
-  current_layout = TmuxLayout.parse(get_current_layout_string)
+  current_layout = TmuxLayout.parse(tmux_current_layout)
   layout = current_layout.layout
   pane_ids = get_pane_ids(layout)
 

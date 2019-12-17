@@ -225,6 +225,10 @@ def build_console_layout(x, width, height, pane_ids)
     VerticalNesting.new(console_layouts))
 end
 
+def determine_console_width(total_width)
+  [[total_width / 4, 120].min, 80].max
+end
+
 def coder_layout(editor_count)
   current_layout = TmuxLayout.parse(get_current_layout_string)
   layout = current_layout.layout
@@ -240,7 +244,7 @@ def coder_layout(editor_count)
   editor_pane_ids = pane_ids[0,editor_count]
   console_pane_ids = pane_ids[editor_count..-1]
 
-  right_width = 120
+  right_width = determine_console_width(total_width)
   left_width = total_width - right_width - 1
 
   layout =
